@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Plus, 
+  Sun,
+  Moon,
   Trash2, 
   Settings2, 
   ChevronLeft, 
@@ -41,6 +43,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'motion/react';
 import { Slot, ViewerSettings, FontFamily, TextAlign } from './types';
 import { cn } from './utils';
+import { BackgroundSettings } from './BackgroundSettings';
+import { useUiTheme, type UiTheme } from './useUiTheme';
 
 // --- Components ---
 
@@ -92,7 +96,7 @@ function SortableSlotItem({
       style={style}
       className={cn(
         "group relative flex items-center gap-2 p-2 rounded-lg transition-all cursor-pointer mb-1",
-        isSelected ? "bg-white shadow-sm ring-1 ring-slate-200" : "hover:bg-slate-200/50",
+        isSelected ? "bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700" : "hover:bg-slate-200/50 dark:hover:bg-slate-800/50",
         isDragging && "opacity-50"
       )}
       onClick={() => !isEditing && onSelect(slot.id)}
@@ -100,7 +104,7 @@ function SortableSlotItem({
       <div 
         {...attributes} 
         {...listeners}
-        className="p-1 text-slate-400 hover:text-slate-600 cursor-grab active:cursor-grabbing"
+        className="p-1 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-grab active:cursor-grabbing"
       >
         <GripVertical size={14} />
       </div>
@@ -122,7 +126,7 @@ function SortableSlotItem({
             className="w-full bg-transparent border-none p-0 text-sm font-medium focus:ring-0"
           />
         ) : (
-          <p className="text-sm font-medium truncate text-slate-700" title={slot.name}>
+          <p className="text-sm font-medium truncate text-slate-700 dark:text-slate-200" title={slot.name}>
             {slot.name}
           </p>
         )}
@@ -134,7 +138,7 @@ function SortableSlotItem({
             e.stopPropagation();
             setIsEditing(true);
           }}
-          className="p-1 text-slate-400 hover:text-indigo-600"
+          className="p-1 text-slate-400 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300"
         >
           <Edit3 size={14} />
         </button>
@@ -143,7 +147,7 @@ function SortableSlotItem({
             e.stopPropagation();
             onDelete(slot.id);
           }}
-          className="p-1 text-slate-400 hover:text-red-500"
+          className="p-1 text-slate-400 dark:text-slate-400 hover:text-red-500"
         >
           <Trash2 size={14} />
         </button>
@@ -161,6 +165,7 @@ const FONT_FAMILY_MAP: Record<FontFamily, string> = {
 };
 
 export default function App() {
+  const { theme, setTheme, isDark } = useUiTheme();
   // --- State ---
   const [slots, setSlots] = useState<Slot[]>(() => {
     const saved = localStorage.getItem('lyrics-slots');
@@ -178,6 +183,10 @@ export default function App() {
     const defaultSettings: ViewerSettings = {
       textColor: '#1e293b', // slate-800
       backgroundColor: '#ffffff',
+      backgroundMode: 'solid',
+      gradientStart: '#fdf2f8',
+      gradientEnd: '#ede9fe',
+      gradientAngle: 135,
       fontSize: '',
       fontFamily: 'serif',
       textAlign: 'left',
@@ -413,7 +422,7 @@ export default function App() {
   );
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-100 font-sans">
+    <div className={cn('flex h-screen w-full overflow-hidden bg-slate-100 dark:bg-slate-800 font-sans', isDark && 'ui-dark')}>
       {/* --- Sidebar --- */}
       <motion.aside 
         initial={false}
@@ -422,13 +431,13 @@ export default function App() {
         onDragLeave={handleSidebarDragLeave}
         onDrop={handleSidebarDrop}
         className={cn(
-          "relative flex flex-col bg-slate-50 border-r border-slate-200 overflow-hidden transition-colors duration-200",
-          isDraggingOverSidebar && "bg-indigo-50/50 ring-2 ring-inset ring-indigo-400"
+          "ui-chrome relative flex flex-col bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700 overflow-hidden transition-colors duration-200",
+          isDraggingOverSidebar && "bg-indigo-50/50 dark:bg-indigo-950/50 ring-2 ring-inset ring-indigo-400"
         )}
       >
         <div className="p-4 flex flex-col gap-4 h-full">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold text-slate-800 tracking-tight">Lyrics Slots</h1>
+            <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">Lyrics Slots</h1>
             <button 
               onClick={addSlot}
               className="p-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
@@ -441,7 +450,7 @@ export default function App() {
           <div className="flex flex-col gap-2">
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-all"
+              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-all"
               title="TXT 파일 업로드"
             >
               <Upload size={14} />
@@ -456,7 +465,7 @@ export default function App() {
             />
             <button
               onClick={deleteAllSlots}
-              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-white border border-red-200 text-red-600 hover:bg-red-50 transition-all"
+              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-slate-900 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 transition-all"
               title="모든 슬롯 삭제"
             >
               <Trash2 size={14} />
@@ -466,7 +475,7 @@ export default function App() {
 
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
             {sortedSlots.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-center px-4">
+              <div className="flex flex-col items-center justify-center h-40 text-slate-400 dark:text-slate-400 text-center px-4">
                 <p className="text-sm">
                   슬롯이 없습니다. + 버튼을 눌러 추가하세요.
                 </p>
@@ -502,17 +511,17 @@ export default function App() {
       {/* --- Main Content --- */}
       <main className="flex-1 flex flex-col relative min-w-0">
         {/* Header Bar */}
-        <header className="h-14 bg-white border-bottom border-slate-200 flex items-center justify-between px-4 z-10 shadow-sm">
+        <header className="ui-chrome h-14 bg-white dark:bg-slate-900 border-bottom border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 z-10 shadow-sm">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
+              className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors"
             >
               <ChevronLeft className={cn("transition-transform", !isSidebarOpen && "rotate-180")} size={20} />
             </button>
             {selectedSlot && (
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-slate-700 truncate max-w-[200px]">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[200px]">
                   {selectedSlot.name}
                 </span>
               </div>
@@ -520,14 +529,21 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              title={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
+              className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors"
+            >
+              {isDark ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             {selectedSlot && (
               <button
                 onClick={() => setIsEditMode(!isEditMode)}
                 className={cn(
                   "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all border",
                   isEditMode 
-                    ? "bg-amber-50 border-amber-200 text-amber-700" 
-                    : "bg-indigo-50 border-indigo-100 text-indigo-700 hover:bg-indigo-100"
+                    ? "bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300"
+                    : "bg-indigo-50 dark:bg-indigo-950 border-indigo-100 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900"
                 )}
               >
                 {isEditMode ? <Pencil size={14} /> : <Eye size={14} />}
@@ -538,7 +554,7 @@ export default function App() {
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
               className={cn(
                 "p-2 rounded-md transition-colors",
-                isSettingsOpen ? "bg-indigo-50 text-indigo-600" : "text-slate-500 hover:bg-slate-100"
+                isSettingsOpen ? "bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               )}
               title="뷰어 설정"
             >
@@ -546,7 +562,7 @@ export default function App() {
             </button>
             <button 
               onClick={() => setIsHelpOpen(true)}
-              className="p-2 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
+              className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors"
               title="사용 설명서"
             >
               <HelpCircle size={20} />
@@ -557,7 +573,12 @@ export default function App() {
         {/* Viewer Area */}
         <div 
           className="flex-1 overflow-y-auto custom-scrollbar py-8 md:py-12 lg:py-20 px-0 transition-colors duration-300"
-          style={{ backgroundColor: settings.backgroundColor }}
+          style={{
+            backgroundColor: settings.backgroundColor,
+            backgroundImage: settings.backgroundMode === 'gradient'
+              ? `linear-gradient(${settings.gradientAngle}deg, ${settings.gradientStart}, ${settings.gradientEnd})`
+              : 'none'
+          }}
         >
           <div className="w-full">
             {selectedSlot ? (
@@ -603,11 +624,11 @@ export default function App() {
                 </div>
               )
             ) : (
-              <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400">
-                <div className="p-6 rounded-full bg-slate-100 mb-4">
+              <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400 dark:text-slate-400">
+                <div className="p-6 rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
                   <Edit3 size={48} className="text-slate-300" />
                 </div>
-                <h2 className="text-xl font-medium text-slate-500 mb-2">선택된 슬롯이 없습니다</h2>
+                <h2 className="text-xl font-medium text-slate-500 dark:text-slate-400 mb-2">선택된 슬롯이 없습니다</h2>
                 <p className="text-sm">왼쪽 패널에서 슬롯을 선택하거나 새로 추가하세요.</p>
               </div>
             )}
@@ -621,27 +642,37 @@ export default function App() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="absolute top-16 right-4 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 p-5 z-20"
+              className="ui-chrome absolute top-16 right-4 w-72 max-w-[calc(100%-2rem)] max-h-[calc(100%-5rem)] overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 z-20"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-800">뷰어 설정</h3>
-                <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <h3 className="font-bold text-slate-800 dark:text-slate-100">뷰어 설정</h3>
+                <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                   <X size={18} />
                 </button>
               </div>
 
               <div className="space-y-6">
+                <div>
+                  <label htmlFor="ui-theme" className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">UI 테마</label>
+                  <select id="ui-theme" value={theme} onChange={e => setTheme(e.target.value as UiTheme)}
+                    className="w-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-700">
+                    <option value="light">라이트</option>
+                    <option value="dark">다크</option>
+                    <option value="system">시스템 설정</option>
+                  </select>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">메뉴와 설정창에 적용됩니다. 가사 색상과 배경은 유지됩니다.</p>
+                </div>
                 {/* Font Family */}
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">글꼴</label>
-                  <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-lg">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">글꼴</label>
+                  <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
                     {(['sans', 'serif', 'mono'] as FontFamily[]).map((font) => (
                       <button
                         key={font}
                         onClick={() => setSettings({ ...settings, fontFamily: font })}
                         className={cn(
                           "py-1.5 text-[10px] font-bold rounded-md transition-all capitalize",
-                          settings.fontFamily === font ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                          settings.fontFamily === font ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-300 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-100"
                         )}
                       >
                         {font}
@@ -652,15 +683,15 @@ export default function App() {
 
                 {/* Font Size */}
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">텍스트 크기 (px)</label>
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">텍스트 크기 (px)</label>
                   <div className="flex items-center gap-2">
-                    <Type size={16} className="text-slate-400" />
+                    <Type size={16} className="text-slate-400 dark:text-slate-400" />
                     <input 
                       type="number" 
                       value={settings.fontSize}
                       placeholder="24"
                       onChange={(e) => setSettings({ ...settings, fontSize: e.target.value ? Number(e.target.value) : '' })}
-                      className="w-full bg-slate-100 border-none rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400"
+                      className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400"
                       min="8"
                       max="120"
                     />
@@ -669,15 +700,15 @@ export default function App() {
 
                 {/* Text Align */}
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">정렬</label>
-                  <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-lg">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">정렬</label>
+                  <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
                     {(['left', 'center', 'right'] as TextAlign[]).map((align) => (
                       <button
                         key={align}
                         onClick={() => setSettings({ ...settings, textAlign: align })}
                         className={cn(
                           "py-1.5 flex justify-center items-center rounded-md transition-all",
-                          settings.textAlign === align ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                          settings.textAlign === align ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-300 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-100"
                         )}
                       >
                         {align === 'left' && <AlignLeft size={16} />}
@@ -690,12 +721,12 @@ export default function App() {
 
                 {/* Margin Slider */}
                 <div className={cn("transition-opacity duration-300", settings.textAlign === 'center' ? "opacity-40 pointer-events-none" : "opacity-100")}>
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block flex justify-between items-center">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block flex justify-between items-center">
                     <span>여백 조절 (%)</span>
-                    <span className="text-indigo-600 font-mono">{settings.paddingX || 0}%</span>
+                    <span className="text-indigo-600 dark:text-indigo-300 font-mono">{settings.paddingX || 0}%</span>
                   </label>
                   <div className="flex items-center gap-3">
-                    <MoveHorizontal size={16} className="text-slate-400 shrink-0" />
+                    <MoveHorizontal size={16} className="text-slate-400 dark:text-slate-400 shrink-0" />
                     <input 
                       type="range" 
                       min="0" 
@@ -709,12 +740,12 @@ export default function App() {
 
                 {/* Letter Spacing Slider */}
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block flex justify-between items-center">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block flex justify-between items-center">
                     <span>자간 조절 (px)</span>
-                    <span className="text-indigo-600 font-mono">{settings.letterSpacing}px</span>
+                    <span className="text-indigo-600 dark:text-indigo-300 font-mono">{settings.letterSpacing}px</span>
                   </label>
                   <div className="flex items-center gap-3">
-                    <ArrowLeftRight size={16} className="text-slate-400 shrink-0" />
+                    <ArrowLeftRight size={16} className="text-slate-400 dark:text-slate-400 shrink-0" />
                     <input 
                       type="range" 
                       min="-5" 
@@ -729,12 +760,12 @@ export default function App() {
 
                 {/* Line Height Slider */}
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block flex justify-between items-center">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block flex justify-between items-center">
                     <span>행간 조절 (배수)</span>
-                    <span className="text-indigo-600 font-mono">{settings.lineHeight}x</span>
+                    <span className="text-indigo-600 dark:text-indigo-300 font-mono">{settings.lineHeight}x</span>
                   </label>
                   <div className="flex items-center gap-3">
-                    <ArrowUpDown size={16} className="text-slate-400 shrink-0" />
+                    <ArrowUpDown size={16} className="text-slate-400 dark:text-slate-400 shrink-0" />
                     <input 
                       type="range" 
                       min="1" 
@@ -749,14 +780,14 @@ export default function App() {
 
                 {/* Font Weight */}
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">텍스트 굵기</label>
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">텍스트 굵기</label>
                   <button
                     onClick={() => setSettings({ ...settings, isBold: !settings.isBold })}
                     className={cn(
                       "w-full py-2 rounded-lg font-bold transition-all border",
                       settings.isBold 
                         ? "bg-indigo-600 text-white border-indigo-600" 
-                        : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
                     )}
                   >
                     {settings.isBold ? "BOLD ON" : "BOLD OFF"}
@@ -766,15 +797,15 @@ export default function App() {
                 {/* Colors */}
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">텍스트 색상</label>
+                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">텍스트 색상</label>
                     <div className="flex flex-wrap gap-2">
                       {['#1e293b', '#475569', '#ffffff', '#ef4444', '#10b981', '#3b82f6'].map(color => (
                         <button
                           key={color}
                           onClick={() => setSettings({ ...settings, textColor: color })}
                           className={cn(
-                            "w-8 h-8 rounded-full border border-slate-200 transition-transform hover:scale-110",
-                            settings.textColor === color && "ring-2 ring-indigo-500 ring-offset-2"
+                            "w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 transition-transform hover:scale-110",
+                            settings.textColor === color && "ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900"
                           )}
                           style={{ backgroundColor: color }}
                         />
@@ -788,28 +819,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">배경 색상</label>
-                    <div className="flex flex-wrap gap-2">
-                      {['#ffffff', '#f8fafc', '#1e293b', '#0f172a', '#fef2f2', '#f0fdf4'].map(color => (
-                        <button
-                          key={color}
-                          onClick={() => setSettings({ ...settings, backgroundColor: color })}
-                          className={cn(
-                            "w-8 h-8 rounded-full border border-slate-200 transition-transform hover:scale-110",
-                            settings.backgroundColor === color && "ring-2 ring-indigo-500 ring-offset-2"
-                          )}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                      <input 
-                        type="color" 
-                        value={settings.backgroundColor} 
-                        onChange={(e) => setSettings({ ...settings, backgroundColor: e.target.value })}
-                        className="w-8 h-8 rounded-full border-none p-0 overflow-hidden cursor-pointer"
-                      />
-                    </div>
-                  </div>
+                  <BackgroundSettings settings={settings} onChange={(changes) => setSettings(previous => ({ ...previous, ...changes }))} />
                 </div>
               </div>
             </motion.div>
@@ -819,21 +829,21 @@ export default function App() {
         {/* Help Modal */}
         <AnimatePresence>
           {isHelpOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div className="ui-chrome fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+                className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
               >
-                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                  <div className="flex items-center gap-2 text-indigo-600">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+                  <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-300">
                     <HelpCircle size={24} />
                     <h2 className="text-xl font-bold tracking-tight">사용 설명서</h2>
                   </div>
                   <button 
                     onClick={() => setIsHelpOpen(false)}
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"
+                    className="p-2 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all"
                   >
                     <X size={20} />
                   </button>
@@ -842,12 +852,12 @@ export default function App() {
                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                   <div className="space-y-8">
                     <section>
-                      <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
                         <Plus className="text-indigo-500" size={18} />
                         슬롯 관리
                       </h3>
-                      <ul className="space-y-2 text-sm text-slate-600 leading-relaxed list-disc pl-5">
-                        <li>왼쪽 상단의 <span className="font-bold text-indigo-600">+</span> 버튼을 눌러 새로운 가사 슬롯을 추가할 수 있습니다.</li>
+                      <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed list-disc pl-5">
+                        <li>왼쪽 상단의 <span className="font-bold text-indigo-600 dark:text-indigo-300">+</span> 버튼을 눌러 새로운 가사 슬롯을 추가할 수 있습니다.</li>
                         <li>슬롯 이름을 클릭하면 해당 가사를 불러옵니다.</li>
                         <li>슬롯의 <span className="font-bold">Grip(점 6개)</span> 아이콘을 드래그하여 순서를 자유롭게 변경할 수 있습니다.</li>
                         <li>슬롯에 마우스를 올리면 나타나는 <span className="font-bold">수정(연필)</span> 아이콘으로 이름을 변경하거나, <span className="font-bold">삭제(휴지통)</span> 아이콘으로 슬롯을 제거할 수 있습니다.</li>
@@ -855,24 +865,24 @@ export default function App() {
                     </section>
 
                     <section>
-                      <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
                         <Eye className="text-indigo-500" size={18} />
                         읽기 및 수정 모드
                       </h3>
-                      <ul className="space-y-2 text-sm text-slate-600 leading-relaxed list-disc pl-5">
-                        <li>상단의 <span className="font-bold text-indigo-600">읽기 모드 / 수정 모드</span> 버튼으로 상태를 전환할 수 있습니다.</li>
+                      <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed list-disc pl-5">
+                        <li>상단의 <span className="font-bold text-indigo-600 dark:text-indigo-300">읽기 모드 / 수정 모드</span> 버튼으로 상태를 전환할 수 있습니다.</li>
                         <li><span className="font-bold">읽기 모드</span>: 가사를 감상하거나 스크롤할 때 실수를 방지하기 위해 텍스트가 고정됩니다.</li>
                         <li><span className="font-bold">수정 모드</span>: 가사를 직접 입력하거나 내용을 편집할 수 있습니다.</li>
                       </ul>
                     </section>
 
                     <section>
-                      <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
                         <Settings2 className="text-indigo-500" size={18} />
                         뷰어 커스터마이징
                       </h3>
-                      <ul className="space-y-2 text-sm text-slate-600 leading-relaxed list-disc pl-5">
-                        <li>상단의 <span className="font-bold text-indigo-600">설정(톱니바퀴)</span> 아이콘을 눌러 뷰어 환경을 바꿀 수 있습니다.</li>
+                      <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed list-disc pl-5">
+                        <li>상단의 <span className="font-bold text-indigo-600 dark:text-indigo-300">설정(톱니바퀴)</span> 아이콘을 눌러 뷰어 환경을 바꿀 수 있습니다.</li>
                         <li><span className="font-bold">글꼴</span>: Sans(고딕), Serif(명조), Mono(코딩 폰트) 중 선택 가능합니다.</li>
                         <li><span className="font-bold">텍스트 크기</span>: 원하는 픽셀(px) 수치를 직접 입력하여 세밀하게 조절합니다.</li>
                         <li><span className="font-bold">좌우 여백</span>: 0%에서 100%까지 가시 영역 내에서의 여백을 조절할 수 있습니다. (기본 2%)</li>
@@ -883,30 +893,30 @@ export default function App() {
                     </section>
 
                     <section>
-                      <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
                         <Upload className="text-indigo-500" size={18} />
                         파일 연동 및 드래그 앤 드랍
                       </h3>
-                      <ul className="space-y-2 text-sm text-slate-600 leading-relaxed list-disc pl-5">
-                        <li>상단의 <span className="font-bold text-indigo-600">TXT 업로드</span> 버튼을 눌러 현재 슬롯에 가사를 불러올 수 있습니다.</li>
-                        <li><span className="font-bold text-indigo-600">강력 추천</span>: 컴퓨터의 <span className="font-bold">.txt 파일을 왼쪽 슬롯 목록 영역으로 드래그 앤 드랍</span>하면 파일명으로 된 새 슬롯이 즉시 생성됩니다. 여러 파일을 한꺼번에 넣을 수도 있습니다.</li>
+                      <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed list-disc pl-5">
+                        <li>상단의 <span className="font-bold text-indigo-600 dark:text-indigo-300">TXT 업로드</span> 버튼을 눌러 현재 슬롯에 가사를 불러올 수 있습니다.</li>
+                        <li><span className="font-bold text-indigo-600 dark:text-indigo-300">강력 추천</span>: 컴퓨터의 <span className="font-bold">.txt 파일을 왼쪽 슬롯 목록 영역으로 드래그 앤 드랍</span>하면 파일명으로 된 새 슬롯이 즉시 생성됩니다. 여러 파일을 한꺼번에 넣을 수도 있습니다.</li>
                       </ul>
                     </section>
 
                     <section>
-                      <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
                         <Trash2 className="text-indigo-500" size={18} />
                         기타 편의 기능
                       </h3>
-                      <ul className="space-y-2 text-sm text-slate-600 leading-relaxed list-disc pl-5">
-                        <li><span className="font-bold">키보드 단축키</span>: 키보드의 <kbd className="px-1 py-0.5 bg-slate-100 border border-slate-200 rounded">←</kbd> <kbd className="px-1 py-0.5 bg-slate-100 border border-slate-200 rounded">→</kbd> 화살표 키로 슬롯을 빠르게 넘겨볼 수 있습니다.</li>
+                      <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed list-disc pl-5">
+                        <li><span className="font-bold">키보드 단축키</span>: 키보드의 <kbd className="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded">←</kbd> <kbd className="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded">→</kbd> 화살표 키로 슬롯을 빠르게 넘겨볼 수 있습니다.</li>
                         <li><span className="font-bold">전체 삭제</span>: 슬롯 목록 상단의 버튼을 통해 모든 슬롯을 한 번에 비울 수 있습니다.</li>
                       </ul>
                     </section>
                   </div>
                 </div>
 
-                <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex justify-end">
                   <button 
                     onClick={() => setIsHelpOpen(false)}
                     className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-md active:scale-95"
@@ -922,25 +932,25 @@ export default function App() {
         {/* Delete All Confirmation Modal */}
         <AnimatePresence>
           {isDeleteConfirmOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div className="ui-chrome fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"
+                className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"
               >
                 <div className="p-6 text-center">
-                  <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-red-50 dark:bg-red-950 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Trash2 size={32} />
                   </div>
-                  <h2 className="text-xl font-bold text-slate-800 mb-2">정말 삭제하겠습니까?</h2>
-                  <p className="text-sm text-slate-500">삭제 후 복구할 수 없습니다.</p>
+                  <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">정말 삭제하겠습니까?</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">삭제 후 복구할 수 없습니다.</p>
                 </div>
 
-                <div className="p-4 bg-slate-50 flex gap-3">
+                <div className="p-4 bg-slate-50 dark:bg-slate-950 flex gap-3">
                   <button 
                     onClick={() => setIsDeleteConfirmOpen(false)}
-                    className="flex-1 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all active:scale-95"
+                    className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95"
                   >
                     No
                   </button>
@@ -957,13 +967,13 @@ export default function App() {
         </AnimatePresence>
 
         {/* Footer Navigation Info */}
-        <footer className="h-8 bg-slate-50 border-t border-slate-200 flex items-center justify-between px-4 text-[10px] text-slate-400 font-medium">
+        <footer className="ui-chrome h-8 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 text-[10px] text-slate-400 dark:text-slate-400 font-medium">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-xs">←</kbd> 이전 슬롯
+              <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded shadow-xs">←</kbd> 이전 슬롯
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded shadow-xs">→</kbd> 다음 슬롯
+              <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded shadow-xs">→</kbd> 다음 슬롯
             </span>
           </div>
           <div>

@@ -13,6 +13,10 @@ export interface Slot {
 export interface ViewerSettings {
   textColor: string;
   backgroundColor: string;
+  backgroundMode: 'solid' | 'gradient';
+  gradientStart: string;
+  gradientEnd: string;
+  gradientAngle: number;
   fontSize: number | string;
   fontFamily: FontFamily;
   textAlign: TextAlign;
