@@ -1,6 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.ui-dark .ui-chrome, .ui-dark .ui-chrome *));
+
+.ui-dark .ui-chrome {
+  color-scheme: dark;
+  color: #e2e8f0;
+}
+
+.ui-dark .ui-chrome.custom-scrollbar::-webkit-scrollbar-thumb,
+.ui-dark .ui-chrome .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
