@@ -41,6 +41,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'motion/react';
 import { Slot, ViewerSettings, FontFamily, TextAlign } from './types';
 import { cn } from './utils';
+import { BackgroundSettings } from './BackgroundSettings';
 
 // --- Components ---
 
@@ -178,6 +179,10 @@ export default function App() {
     const defaultSettings: ViewerSettings = {
       textColor: '#1e293b', // slate-800
       backgroundColor: '#ffffff',
+      backgroundMode: 'solid',
+      gradientStart: '#fdf2f8',
+      gradientEnd: '#ede9fe',
+      gradientAngle: 135,
       fontSize: '',
       fontFamily: 'serif',
       textAlign: 'left',
@@ -557,7 +562,12 @@ export default function App() {
         {/* Viewer Area */}
         <div 
           className="flex-1 overflow-y-auto custom-scrollbar py-8 md:py-12 lg:py-20 px-0 transition-colors duration-300"
-          style={{ backgroundColor: settings.backgroundColor }}
+          style={{
+            backgroundColor: settings.backgroundColor,
+            backgroundImage: settings.backgroundMode === 'gradient'
+              ? `linear-gradient(${settings.gradientAngle}deg, ${settings.gradientStart}, ${settings.gradientEnd})`
+              : 'none'
+          }}
         >
           <div className="w-full">
             {selectedSlot ? (
@@ -621,7 +631,7 @@ export default function App() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="absolute top-16 right-4 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 p-5 z-20"
+              className="absolute top-16 right-4 w-72 max-w-[calc(100%-2rem)] max-h-[calc(100%-5rem)] overflow-y-auto custom-scrollbar bg-white rounded-xl shadow-2xl border border-slate-200 p-5 z-20"
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-slate-800">뷰어 설정</h3>
@@ -788,28 +798,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">배경 색상</label>
-                    <div className="flex flex-wrap gap-2">
-                      {['#ffffff', '#f8fafc', '#1e293b', '#0f172a', '#fef2f2', '#f0fdf4'].map(color => (
-                        <button
-                          key={color}
-                          onClick={() => setSettings({ ...settings, backgroundColor: color })}
-                          className={cn(
-                            "w-8 h-8 rounded-full border border-slate-200 transition-transform hover:scale-110",
-                            settings.backgroundColor === color && "ring-2 ring-indigo-500 ring-offset-2"
-                          )}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                      <input 
-                        type="color" 
-                        value={settings.backgroundColor} 
-                        onChange={(e) => setSettings({ ...settings, backgroundColor: e.target.value })}
-                        className="w-8 h-8 rounded-full border-none p-0 overflow-hidden cursor-pointer"
-                      />
-                    </div>
-                  </div>
+                  <BackgroundSettings settings={settings} onChange={(changes) => setSettings(previous => ({ ...previous, ...changes }))} />
                 </div>
               </div>
             </motion.div>
