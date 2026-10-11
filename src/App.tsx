@@ -542,7 +542,7 @@ export default function App() {
                 className={cn(
                   "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all border",
                   isEditMode 
-                    ? "bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300" 
+                    ? "bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300"
                     : "bg-indigo-50 dark:bg-indigo-950 border-indigo-100 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900"
                 )}
               >
