@@ -8,7 +8,6 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Upload, 
-  ListMusic,
   BookmarkPlus,
   GripVertical,
   Edit3,
@@ -46,7 +45,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Slot, ViewerSettings, FontFamily, TextAlign } from './types';
 import { cn } from './utils';
 import { BackgroundSettings } from './BackgroundSettings';
-import BugsImportDialog from './BugsImportDialog';
 import BugsBookmarkImport from './BugsBookmarkImport';
 import BookmarkSetup from './BookmarkSetup';
 import { matchRecentAppleAlbum } from './bookmarkSlotMatch';
@@ -223,7 +221,6 @@ export default function App() {
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [isBugsImportOpen, setIsBugsImportOpen] = useState(false);
   const [isBookmarkSetupOpen, setIsBookmarkSetupOpen] = useState(false);
   const [bookmarkNonce, setBookmarkNonce] = useState(() => location.hash.match(/^#bugs-bridge=([0-9a-f]{32})$/)?.[1] || '');
   const [bookmarkNotice, setBookmarkNotice] = useState('');
@@ -333,7 +330,6 @@ export default function App() {
       setSlots(next);
       setSelectedSlotId(changed[0]);
     }
-    setIsBugsImportOpen(false);
     return changed.length;
   };
 
@@ -534,14 +530,6 @@ export default function App() {
             >
               <Upload size={14} />
               TXT 업로드
-            </button>
-            <button
-              onClick={() => setIsBugsImportOpen(true)}
-              aria-haspopup="dialog"
-              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-neutral-900 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-all"
-            >
-              <ListMusic size={14} aria-hidden="true" />
-              앨범 가사 가져오기
             </button>
             <button
               type="button"
@@ -1048,9 +1036,6 @@ export default function App() {
           </div>
         )}
         {isBookmarkSetupOpen && <BookmarkSetup onClose={() => setIsBookmarkSetupOpen(false)} />}
-        {isBugsImportOpen && (
-          <BugsImportDialog existingIds={existingSlotIds} existingEmptyIds={emptySlotIds} onImport={importBugsTracks} onClose={() => setIsBugsImportOpen(false)} />
-        )}
 
         {/* Delete All Confirmation Modal */}
         <AnimatePresence>

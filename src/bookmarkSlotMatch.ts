@@ -1,9 +1,8 @@
-import type { BugsAlbum } from './bugsAlbum';
+import type { BugsTrack } from './bugsAlbum';
 
+// Read-only compatibility for slots created by the former catalog importer.
 const storageKey = 'lyrics-recent-apple-album';
 const normalize = (s: string) => s.normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
-const names = (primary: string, alternate?: string) =>
-  [...new Set([primary, alternate].filter((s): s is string => !!s).map(normalize))];
 
 interface AlbumSignature {
   id: string;
@@ -13,7 +12,12 @@ interface AlbumSignature {
   tracks: { id: string; number: number; titles: string[]; artists: string[]; duration?: number }[];
 }
 
-type IncomingAlbum = Pick<BugsAlbum, 'title' | 'artist' | 'tracks'> & { releaseDate?: string };
+interface IncomingAlbum {
+  title: string;
+  artist: string;
+  tracks: BugsTrack[];
+  releaseDate?: string;
+}
 
 function validNames(values: unknown): values is string[] {
   return Array.isArray(values) && values.length > 0 && values.length <= 2
@@ -28,28 +32,6 @@ function validAlbum(a: AlbumSignature): boolean {
     && a.tracks.every((t, i) => typeof t.id === 'string' && t.id.startsWith(a.id + ':')
       && /^[1-9]\d*$/.test(t.id.slice(a.id.length + 1)) && t.number === i + 1
       && validNames(t.titles) && validNames(t.artists) && (t.duration === undefined || (Number.isFinite(t.duration) && t.duration > 0)));
-}
-
-export function rememberAppleAlbum(album: BugsAlbum & { releaseDate?: string; trackCount?: number }) {
-  if (album.source !== 'apple') return;
-  try {
-    // Discard the previous selection even if this release is partial or storage is full.
-    localStorage.removeItem(storageKey);
-    if (album.trackCount !== undefined && album.trackCount !== album.tracks.length) return;
-    const snapshot: AlbumSignature = {
-      id: album.id, titles: names(album.title, album.alternateAlbumTitle),
-      artists: names(album.artist, album.alternateArtist), releaseDate: album.releaseDate,
-      tracks: album.tracks.map(t => {
-        const artist = t.artist || album.artist;
-        const alternate = t.alternateArtist || (artist === album.artist ? album.alternateArtist : undefined);
-        return {
-          id: t.id, number: t.number, titles: names(t.title, t.alternateTitle),
-          artists: names(artist, alternate), duration: t.duration,
-        };
-      }),
-    };
-    if (validAlbum(snapshot)) localStorage.setItem(storageKey, JSON.stringify(snapshot));
-  } catch { /* Matching is optional when browser storage is unavailable. */ }
 }
 
 function matchesArtist(label: string, candidates: string[]) {

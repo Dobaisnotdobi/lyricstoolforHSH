@@ -1,29 +1,26 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { matchRecentAppleAlbum, rememberAppleAlbum } from '../src/bookmarkSlotMatch.ts';
+import { matchRecentAppleAlbum } from '../src/bookmarkSlotMatch.ts';
 
 test('only a matching full release reuses Apple slots, and existing Bugs slots take precedence', t => {
   const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
   const memory = new Map<string, string>();
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
     getItem: (key: string) => memory.get(key) ?? null,
-    setItem: (key: string, value: string) => memory.set(key, value),
-    removeItem: (key: string) => memory.delete(key),
   } });
   t.after(() => {
     if (original) Object.defineProperty(globalThis, 'localStorage', original);
     else Reflect.deleteProperty(globalThis, 'localStorage');
   });
 
-  rememberAppleAlbum({
-    id: 'apple:42', source: 'apple', title: 'Telescope', alternateAlbumTitle: '망원경',
-    artist: 'Example Artist', alternateArtist: '예시 가수', releaseDate: '2021-11-07',
-    url: 'https://music.apple.com/us/album/42', trackCount: 2,
+  memory.set('lyrics-recent-apple-album', JSON.stringify({
+    id: 'apple:42', titles: ['telescope', '망원경'],
+    artists: ['example artist', '예시 가수'], releaseDate: '2021-11-07',
     tracks: [
-      { id: 'apple:42:51', number: 1, title: 'Blue Window', alternateTitle: '파란 창' },
-      { id: 'apple:42:52', number: 2, title: 'Night Sky', alternateTitle: '밤하늘' },
+      { id: 'apple:42:51', number: 1, titles: ['blue window', '파란 창'], artists: ['example artist', '예시 가수'] },
+      { id: 'apple:42:52', number: 2, titles: ['night sky', '밤하늘'], artists: ['example artist', '예시 가수'] },
     ],
-  });
+  }));
   const bugs = {
     title: '망원경', artist: '예시 가수 (Example Artist)', releaseDate: '2021-11-07',
     tracks: [
