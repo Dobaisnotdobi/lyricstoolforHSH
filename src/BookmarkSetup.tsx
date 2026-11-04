@@ -28,8 +28,8 @@ export default function BookmarkSetup({ onClose }: { onClose?: () => void }) {
         <p className="mt-4 text-sm">아래 보라색 버튼을 Chrome 북마크바로 <strong>한 번 끌어다 놓으세요.</strong></p>
         <a ref={anchor} draggable onClick={event => { event.preventDefault(); setHint(true); }}
           className="my-4 inline-flex cursor-grab items-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white active:cursor-grabbing"
-          title="벅스 → 가사 뷰어"><GripVertical aria-hidden="true" size={16}/><Bookmark aria-hidden="true" size={17}/>
-          벅스 → 가사 뷰어
+          title="가사로딩"><GripVertical aria-hidden="true" size={16}/><Bookmark aria-hidden="true" size={17}/>
+          가사로딩
         </a>
         <p role="status" className="text-xs text-slate-600 dark:text-neutral-300">{hint ? '버튼을 마우스로 누른 채 주소창 아래 북마크바에 놓으세요. ' : ''}북마크바가 숨겨져 있으면 Ctrl+Shift+B를 누르세요.</p>
         <ol className="mt-6 list-decimal space-y-2 border-t border-slate-200 pt-4 pl-5 text-sm dark:border-neutral-700">
