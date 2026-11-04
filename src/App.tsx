@@ -8,6 +8,7 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Upload, 
+  ListMusic,
   GripVertical,
   Edit3,
   Check,
@@ -44,6 +45,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Slot, ViewerSettings, FontFamily, TextAlign } from './types';
 import { cn } from './utils';
 import { BackgroundSettings } from './BackgroundSettings';
+import BugsImportDialog from './BugsImportDialog';
+import type { BugsTrack } from './bugsAlbum';
 import { useUiTheme, type UiTheme } from './useUiTheme';
 
 // --- Components ---
@@ -214,6 +217,7 @@ export default function App() {
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isBugsImportOpen, setIsBugsImportOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('lyrics-sidebar-open');
@@ -257,7 +261,29 @@ export default function App() {
     slots.find(s => s.id === selectedSlotId), 
   [slots, selectedSlotId]);
 
+  const existingSlotIds = useMemo(() => new Set(slots.map(slot => slot.id)), [slots]);
+
   // --- Handlers ---
+  const importBugsTracks = (tracks: BugsTrack[]) => {
+    const seen = new Set(existingSlotIds);
+    const nextOrder = (sortedSlots.at(-1)?.order ?? -1) + 1;
+    const now = Date.now();
+    const additions: Slot[] = [];
+    for (const track of tracks) {
+      if (seen.has(track.id)) continue;
+      seen.add(track.id);
+      additions.push({
+        id: track.id, name: track.title, content: '', order: nextOrder + additions.length,
+        createdAt: now, updatedAt: now
+      });
+    }
+    if (additions.length) {
+      setSlots(previous => [...previous, ...additions]);
+      setSelectedSlotId(additions[0].id);
+    }
+    setIsBugsImportOpen(false);
+  };
+
   const addSlot = () => {
     const newId = crypto.randomUUID();
     const newOrder = slots.length > 0 ? Math.max(...slots.map(s => s.order)) + 1 : 0;
@@ -455,6 +481,14 @@ export default function App() {
             >
               <Upload size={14} />
               TXT 업로드
+            </button>
+            <button
+              onClick={() => setIsBugsImportOpen(true)}
+              aria-haspopup="dialog"
+              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-neutral-900 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-all"
+            >
+              <ListMusic size={14} aria-hidden="true" />
+              벅스 가져오기 (DEMO)
             </button>
             <input 
               type="file" 
@@ -928,6 +962,10 @@ export default function App() {
             </div>
           )}
         </AnimatePresence>
+
+        {isBugsImportOpen && (
+          <BugsImportDialog existingIds={existingSlotIds} onImport={importBugsTracks} onClose={() => setIsBugsImportOpen(false)} />
+        )}
 
         {/* Delete All Confirmation Modal */}
         <AnimatePresence>
