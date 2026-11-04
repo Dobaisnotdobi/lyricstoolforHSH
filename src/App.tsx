@@ -188,11 +188,11 @@ export default function App() {
   });
   const [settings, setSettings] = useState<ViewerSettings>(() => {
     const defaultSettings: ViewerSettings = {
-      textColor: '#1e293b', // slate-800
-      backgroundColor: '#ffffff',
-      backgroundMode: 'solid',
-      gradientStart: '#fdf2f8',
-      gradientEnd: '#ede9fe',
+      textColor: '#e5e5e5',
+      backgroundColor: '#171717',
+      backgroundMode: 'gradient',
+      gradientStart: '#171717',
+      gradientEnd: '#303030',
       gradientAngle: 135,
       fontSize: '',
       fontFamily: 'serif',
@@ -209,6 +209,7 @@ export default function App() {
         return { 
           ...defaultSettings, 
           ...parsed,
+          backgroundMode: parsed.backgroundMode ?? (parsed.backgroundColor ? 'solid' : defaultSettings.backgroundMode),
           paddingX: (typeof parsed.paddingX === 'number') ? parsed.paddingX : defaultSettings.paddingX,
           letterSpacing: (typeof parsed.letterSpacing === 'number') ? parsed.letterSpacing : defaultSettings.letterSpacing,
           lineHeight: (typeof parsed.lineHeight === 'number') ? parsed.lineHeight : defaultSettings.lineHeight
