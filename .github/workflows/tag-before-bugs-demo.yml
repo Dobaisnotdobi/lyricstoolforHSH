@@ -1,0 +1,19 @@
+name: Tag stable version before Bugs demo
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/tag-before-bugs-demo.yml']
+
+permissions: {}
+
+jobs:
+  tag:
+    if: github.repository == 'Dobaisnotdobi/lyricstoolforHSH' && github.event.before == 'b658e4775ad35e7a37922159910c5a433d895189'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Record the verified stable commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref=refs/tags/stable-before-bugs-demo -f sha=b658e4775ad35e7a37922159910c5a433d895189 --silent
