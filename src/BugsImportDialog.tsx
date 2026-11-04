@@ -41,6 +41,11 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
   const withLyrics = selected.filter(track => !!lyrics[track.id]);
   const busy = lookingUp || readingFiles;
 
+  function saveSelection(tracks: (BugsTrack & { lyrics?: string })[]) {
+    try { onImport(tracks); }
+    catch { setError('슬롯을 저장하지 못했습니다. 브라우저의 사이트 저장 공간을 확인한 뒤 다시 시도하세요.'); }
+  }
+
   function clearLyrics() {
     revision.current++;
     setPreviewKey(n => n + 1);
@@ -168,6 +173,8 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
             <CatalogAlbumPicker onAlbum={setAlbum} onReset={() => resetUrl('')} onBugsUrl={openAlbum} />
           ) : (
           <form className="space-y-2" onSubmit={event => { event.preventDefault(); openAlbum(url); }}>
+            <p className="text-sm"><a href="?setup=bugs" target="_blank" rel="noreferrer"
+              className="font-semibold text-indigo-700 underline dark:text-indigo-300">벅스 북마크 버튼 등록 ↗</a> · 벅스에서 직접 가져오기</p>
             <label htmlFor="bugs-url" className="text-sm font-semibold">벅스 앨범 주소</label>
             <input id="bugs-url" type="text" inputMode="url" autoFocus autoComplete="off" spellCheck={false} value={url}
               onChange={event => resetUrl(event.target.value)} placeholder="https://music.bugs.co.kr/album/…" className={field} />
@@ -259,9 +266,9 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
           <span role="status" className="mr-auto text-xs text-slate-600 dark:text-neutral-300">{album ? (withLyrics.length ? `가사 ${withLyrics.length}곡 저장 가능` : '온라인 조회 또는 TXT로 가사를 불러오세요.') : (pasteUrl ? '앨범을 검색하거나 수록곡 표를 붙여넣어 주세요.' : '먼저 앨범을 선택해 주세요.')}</span>
           <button type="button" className={secondary} onClick={onClose}>취소</button>
           {withLyrics.length ? <button type="button" disabled={busy} className={primary}
-            onClick={() => onImport(withLyrics.map(t => ({ ...t, lyrics: lyrics[t.id] })))}>가사 {withLyrics.length}곡 저장</button>
+            onClick={() => saveSelection(withLyrics.map(t => ({ ...t, lyrics: lyrics[t.id] })))}>가사 {withLyrics.length}곡 저장</button>
             : <button type="button" disabled={busy || !selected.length} className={primary}
-              onClick={() => onImport(selected)}>제목만 추가</button>}
+              onClick={() => saveSelection(selected)}>제목만 추가</button>}
         </footer>
       </div>
     </dialog>

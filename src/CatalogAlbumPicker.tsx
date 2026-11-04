@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, LoaderCircle, Search } from 'lucide-react';
 import { loadCatalogAlbum, searchCatalogAlbums, type CatalogAlbumHit } from './albumCatalog';
 import type { BugsAlbum } from './bugsAlbum';
+import { rememberAppleAlbum } from './bookmarkSlotMatch';
 
 interface Props {
   onAlbum: (album: BugsAlbum) => void;
@@ -56,6 +57,7 @@ export default function CatalogAlbumPicker({ onAlbum, onReset, onBugsUrl }: Prop
         setStatus('수록곡을 불러오는 중…');
         const album = await loadCatalogAlbum(hit || value, job.signal);
         if (job.signal.aborted) return;
+        rememberAppleAlbum(album);
         onAlbum(album);
         const count = album.tracks.length;
         setStatus(count < album.trackCount

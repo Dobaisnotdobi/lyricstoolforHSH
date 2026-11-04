@@ -46,6 +46,8 @@ import { Slot, ViewerSettings, FontFamily, TextAlign } from './types';
 import { cn } from './utils';
 import { BackgroundSettings } from './BackgroundSettings';
 import BugsImportDialog from './BugsImportDialog';
+import BugsBookmarkImport from './BugsBookmarkImport';
+import { matchRecentAppleAlbum } from './bookmarkSlotMatch';
 import type { BugsTrack } from './bugsAlbum';
 import { useUiTheme, type UiTheme } from './useUiTheme';
 
@@ -218,6 +220,9 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isBugsImportOpen, setIsBugsImportOpen] = useState(false);
+  const [bookmarkNonce, setBookmarkNonce] = useState(() => location.hash.match(/^#bugs-bridge=([0-9a-f]{32})$/)?.[1] || '');
+  const [bookmarkNotice, setBookmarkNotice] = useState('');
+  const [bookmarkMatches, setBookmarkMatches] = useState<Map<string, string>>(new Map());
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('lyrics-sidebar-open');
@@ -229,8 +234,23 @@ export default function App() {
 
   // --- Persistence ---
   useEffect(() => {
-    localStorage.setItem('lyrics-slots', JSON.stringify(slots));
+    const json = JSON.stringify(slots);
+    if (localStorage.getItem('lyrics-slots') !== json) localStorage.setItem('lyrics-slots', json);
   }, [slots]);
+
+  // A bookmark opens another viewer tab. Keep open tabs from later saving an obsolete slot list.
+  useEffect(() => {
+    function syncSlots(event: StorageEvent) {
+      if (event.storageArea !== localStorage || event.key !== 'lyrics-slots' || !event.newValue) return;
+      if (event.newValue !== localStorage.getItem('lyrics-slots')) return;
+      try {
+        const updated = JSON.parse(event.newValue);
+        if (Array.isArray(updated)) setSlots(updated);
+      } catch { /* Ignore malformed external updates. */ }
+    }
+    window.addEventListener('storage', syncSlots);
+    return () => window.removeEventListener('storage', syncSlots);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('lyrics-settings', JSON.stringify(settings));
@@ -265,34 +285,51 @@ export default function App() {
   const emptySlotIds = useMemo(() => new Set(slots.filter(slot => !slot.content.trim()).map(slot => slot.id)), [slots]);
 
   // --- Handlers ---
-  const importBugsTracks = (tracks: (BugsTrack & { lyrics?: string })[]) => {
-    const seen = new Set(existingSlotIds);
-    const lyricsById = new Map<string, string>();
-    const nextOrder = (sortedSlots.at(-1)?.order ?? -1) + 1;
-    const now = Date.now();
-    const additions: Slot[] = [];
-    for (const track of tracks) {
-      if (emptySlotIds.has(track.id) && track.lyrics?.trim()) {
-        lyricsById.set(track.id, track.lyrics);
-      }
-      if (seen.has(track.id)) continue;
-      seen.add(track.id);
-      additions.push({
-        id: track.id, name: track.title, content: track.lyrics ?? '', order: nextOrder + additions.length,
-        createdAt: now, updatedAt: now
-      });
+  function bookmarkSlotSets(matches: Map<string, string>) {
+    const existingIds = new Set<string>(existingSlotIds);
+    const existingEmptyIds = new Set<string>(emptySlotIds);
+    for (const [bugsId, appleId] of matches) {
+      if (existingSlotIds.has(appleId)) existingIds.add(bugsId);
+      if (emptySlotIds.has(appleId)) existingEmptyIds.add(bugsId);
     }
-    if (additions.length || lyricsById.size) {
-      setSlots(previous => [
-        ...previous.map(slot => {
-          const content = lyricsById.get(slot.id);
-          return content && !slot.content.trim() ? { ...slot, content, updatedAt: now } : slot;
-        }),
-        ...additions
-      ]);
-      setSelectedSlotId(additions[0]?.id ?? lyricsById.keys().next().value);
+    return { existingIds, existingEmptyIds };
+  }
+
+  function closeBookmark() {
+    setBookmarkNonce('');
+    setBookmarkMatches(new Map());
+    if (location.hash.startsWith('#bugs-bridge=')) history.replaceState(null, '', location.pathname + location.search);
+    window.opener = null;
+  }
+
+  const importBugsTracks = (tracks: (BugsTrack & { lyrics?: string })[]) => {
+    // Use the current stored rows even if a sibling tab edited while the album was being read.
+    const stored = localStorage.getItem('lyrics-slots');
+    const previous: Slot[] = stored === null ? slots : JSON.parse(stored);
+    const ids = new Set(previous.map(s => s.id));
+    const requested = new Map(tracks.map(track => [track.id, track]));
+    const now = Date.now();
+    const changed: string[] = [];
+    const next = previous.map(slot => {
+      const content = requested.get(slot.id)?.lyrics;
+      if (slot.content.trim() || !content?.trim()) return slot;
+      changed.push(slot.id);
+      return { ...slot, content, updatedAt: now };
+    });
+    let order = previous.reduce((max, slot) => Math.max(max, slot.order), -1);
+    for (const track of requested.values()) {
+      if (ids.has(track.id)) continue;
+      next.push({ id: track.id, name: track.title, content: track.lyrics ?? '', order: ++order, createdAt: now, updatedAt: now });
+      changed.push(track.id);
+    }
+    if (changed.length) {
+      // Synchronous write reports a quota failure before the bookmark dialog declares success.
+      localStorage.setItem('lyrics-slots', JSON.stringify(next));
+      setSlots(next);
+      setSelectedSlotId(changed[0]);
     }
     setIsBugsImportOpen(false);
+    return changed.length;
   };
 
   const addSlot = () => {
@@ -974,6 +1011,24 @@ export default function App() {
           )}
         </AnimatePresence>
 
+        {bookmarkNonce && (
+          <BugsBookmarkImport nonce={bookmarkNonce} {...bookmarkSlotSets(bookmarkMatches)}
+            onAlbum={album => {
+              const matches = matchRecentAppleAlbum(album, existingSlotIds);
+              setBookmarkMatches(matches);
+              return bookmarkSlotSets(matches);
+            }}
+            onImport={(tracks, summary) => {
+              const count = importBugsTracks(tracks.map(track => ({ ...track, id: bookmarkMatches.get(track.id) || track.id })));
+              setBookmarkNotice(count === tracks.length && summary ? summary : `이번에 저장한 가사 ${count}곡`);
+              closeBookmark();
+            }} onClose={closeBookmark} />
+        )}
+        {bookmarkNotice && (
+          <div role="status" className="ui-chrome fixed bottom-5 left-1/2 z-50 flex max-w-[94vw] -translate-x-1/2 items-center gap-3 rounded-lg bg-slate-900 px-4 py-2 text-sm text-white shadow-lg">
+            <span>{bookmarkNotice}</span><button type="button" aria-label="저장 알림 닫기" onClick={() => setBookmarkNotice('')}><X size={16}/></button>
+          </div>
+        )}
         {isBugsImportOpen && (
           <BugsImportDialog existingIds={existingSlotIds} existingEmptyIds={emptySlotIds} onImport={importBugsTracks} onClose={() => setIsBugsImportOpen(false)} />
         )}
