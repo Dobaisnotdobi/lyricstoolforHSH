@@ -107,12 +107,16 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
     const generation = revision.current;
     const result: Record<string, string> = {};
     const chosen = Array.from(input);
-    const names = chosen.map(file => normalize(file.name.replace(/\.txt$/i, '')));
+    const targets = chosen.map(file => {
+      if (!/\.txt$/i.test(file.name)) return undefined;
+      const name = normalize(file.name.replace(/\.txt$/i, ''));
+      const matches = album.tracks.filter(t => normalize(t.title) === name || (t.alternateTitle && normalize(t.alternateTitle) === name));
+      return matches.length === 1 ? matches[0] : undefined;
+    });
     setReadingFiles(true);
     for (const [i, file] of chosen.entries()) {
-      const matches = album.tracks.filter(t => normalize(t.title) === names[i]);
-      if (!/\.txt$/i.test(file.name) || names.indexOf(names[i]) !== names.lastIndexOf(names[i]) || matches.length !== 1) continue;
-      const track = matches[0];
+      const track = targets[i];
+      if (!track || targets.indexOf(track) !== targets.lastIndexOf(track)) continue;
       if (existingIds.has(track.id) && !existingEmptyIds.has(track.id)) continue;
       try {
         const contents = await file.text();
@@ -201,6 +205,7 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
           {album && (
             <section aria-label="가져올 수록곡" className="space-y-2">
               <h3 className="font-semibold">{album.title}{album.artist && <span className="ml-2 text-sm font-normal">{album.artist}</span>}</h3>
+              {(album.alternateAlbumTitle || album.alternateArtist) && <p className="text-sm text-slate-600 dark:text-neutral-300">{[album.alternateAlbumTitle, album.alternateArtist].filter(Boolean).join(' · ')}</p>}
               <p className="text-xs text-slate-600 dark:text-neutral-300">
                 {album.source === 'apple' ? 'Apple Music 수록곡' : album.source === 'sample' ? '저장된 벅스 예시 목록' : '붙여넣은 수록곡 목록'} · {album.tracks.length}곡
               </p>
@@ -234,7 +239,9 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
                         <input type="checkbox" disabled={!canSelect} checked={canSelect && !unchecked.has(track.id)}
                           onChange={() => toggle(track.id)} className="size-4 shrink-0 accent-indigo-600" />
                         <span className="text-xs tabular-nums text-slate-500 dark:text-neutral-400">{track.number}.</span>
-                        <span className="break-words">{track.title}</span>
+                        <span className="min-w-0 break-words">{track.title}
+                          {track.alternateTitle && <small className="block text-xs text-slate-600 dark:text-neutral-400">{track.alternateTitle}</small>}
+                        </span>
                       </label>
                       <span className="text-xs text-slate-600 dark:text-neutral-400">{files[track.id] ? 'TXT 가사' : online[track.id] ? '온라인 가사' : exists ? (existingEmptyIds.has(track.id) ? '빈 슬롯' : '기존 가사') : ''}</span>
                       {track.adult && <span className="whitespace-nowrap text-xs text-red-700 dark:text-red-300">19금</span>}
