@@ -9,6 +9,7 @@ import {
   ChevronRight, 
   Upload, 
   ListMusic,
+  BookmarkPlus,
   GripVertical,
   Edit3,
   Check,
@@ -47,6 +48,7 @@ import { cn } from './utils';
 import { BackgroundSettings } from './BackgroundSettings';
 import BugsImportDialog from './BugsImportDialog';
 import BugsBookmarkImport from './BugsBookmarkImport';
+import BookmarkSetup from './BookmarkSetup';
 import { matchRecentAppleAlbum } from './bookmarkSlotMatch';
 import type { BugsTrack } from './bugsAlbum';
 import { useUiTheme, type UiTheme } from './useUiTheme';
@@ -220,6 +222,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isBugsImportOpen, setIsBugsImportOpen] = useState(false);
+  const [isBookmarkSetupOpen, setIsBookmarkSetupOpen] = useState(false);
   const [bookmarkNonce, setBookmarkNonce] = useState(() => location.hash.match(/^#bugs-bridge=([0-9a-f]{32})$/)?.[1] || '');
   const [bookmarkNotice, setBookmarkNotice] = useState('');
   const [bookmarkMatches, setBookmarkMatches] = useState<Map<string, string>>(new Map());
@@ -537,6 +540,15 @@ export default function App() {
             >
               <ListMusic size={14} aria-hidden="true" />
               앨범 가사 가져오기
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsBookmarkSetupOpen(true)}
+              aria-haspopup="dialog"
+              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-neutral-900 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-all"
+            >
+              <BookmarkPlus size={14} aria-hidden="true" />
+              벅스 북마크 추가
             </button>
             <input 
               type="file" 
@@ -1029,6 +1041,7 @@ export default function App() {
             <span>{bookmarkNotice}</span><button type="button" aria-label="저장 알림 닫기" onClick={() => setBookmarkNotice('')}><X size={16}/></button>
           </div>
         )}
+        {isBookmarkSetupOpen && <BookmarkSetup onClose={() => setIsBookmarkSetupOpen(false)} />}
         {isBugsImportOpen && (
           <BugsImportDialog existingIds={existingSlotIds} existingEmptyIds={emptySlotIds} onImport={importBugsTracks} onClose={() => setIsBugsImportOpen(false)} />
         )}
