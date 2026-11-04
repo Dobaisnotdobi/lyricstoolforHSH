@@ -53,6 +53,8 @@ import { matchRecentAppleAlbum } from './bookmarkSlotMatch';
 import type { BugsTrack } from './bugsAlbum';
 import { useUiTheme, type UiTheme } from './useUiTheme';
 
+const GRADIENT_NOISE_URL = new URL('./gradient-noise.svg', import.meta.url).href;
+
 // --- Components ---
 
 function SortableSlotItem({ 
@@ -671,8 +673,12 @@ export default function App() {
           style={{
             backgroundColor: settings.backgroundColor,
             backgroundImage: settings.backgroundMode === 'gradient'
-              ? `linear-gradient(${settings.gradientAngle}deg, ${settings.gradientStart}, ${settings.gradientEnd})`
-              : 'none'
+              ? `url("${GRADIENT_NOISE_URL}"), linear-gradient(${settings.gradientAngle}deg, ${settings.gradientStart}, ${settings.gradientEnd})`
+              : 'none',
+            // Static, neutral noise breaks up color bands below the lyrics.
+            backgroundSize: '256px 256px, 100% 100%',
+            backgroundRepeat: 'repeat, no-repeat',
+            backgroundBlendMode: 'overlay, normal'
           }}
         >
           <div className="w-full">
