@@ -262,24 +262,35 @@ export default function App() {
   [slots, selectedSlotId]);
 
   const existingSlotIds = useMemo(() => new Set(slots.map(slot => slot.id)), [slots]);
+  const emptySlotIds = useMemo(() => new Set(slots.filter(slot => !slot.content.trim()).map(slot => slot.id)), [slots]);
 
   // --- Handlers ---
-  const importBugsTracks = (tracks: BugsTrack[]) => {
+  const importBugsTracks = (tracks: (BugsTrack & { lyrics?: string })[]) => {
     const seen = new Set(existingSlotIds);
+    const lyricsById = new Map<string, string>();
     const nextOrder = (sortedSlots.at(-1)?.order ?? -1) + 1;
     const now = Date.now();
     const additions: Slot[] = [];
     for (const track of tracks) {
+      if (emptySlotIds.has(track.id) && track.lyrics?.trim()) {
+        lyricsById.set(track.id, track.lyrics);
+      }
       if (seen.has(track.id)) continue;
       seen.add(track.id);
       additions.push({
-        id: track.id, name: track.title, content: '', order: nextOrder + additions.length,
+        id: track.id, name: track.title, content: track.lyrics ?? '', order: nextOrder + additions.length,
         createdAt: now, updatedAt: now
       });
     }
-    if (additions.length) {
-      setSlots(previous => [...previous, ...additions]);
-      setSelectedSlotId(additions[0].id);
+    if (additions.length || lyricsById.size) {
+      setSlots(previous => [
+        ...previous.map(slot => {
+          const content = lyricsById.get(slot.id);
+          return content && !slot.content.trim() ? { ...slot, content, updatedAt: now } : slot;
+        }),
+        ...additions
+      ]);
+      setSelectedSlotId(additions[0]?.id ?? lyricsById.keys().next().value);
     }
     setIsBugsImportOpen(false);
   };
@@ -964,7 +975,7 @@ export default function App() {
         </AnimatePresence>
 
         {isBugsImportOpen && (
-          <BugsImportDialog existingIds={existingSlotIds} onImport={importBugsTracks} onClose={() => setIsBugsImportOpen(false)} />
+          <BugsImportDialog existingIds={existingSlotIds} existingEmptyIds={emptySlotIds} onImport={importBugsTracks} onClose={() => setIsBugsImportOpen(false)} />
         )}
 
         {/* Delete All Confirmation Modal */}

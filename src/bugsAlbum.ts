@@ -4,6 +4,7 @@ export interface BugsTrack {
   title: string;
   url?: string;
   adult?: boolean;
+  artist?: string;
 }
 
 export interface BugsAlbum {
@@ -44,7 +45,7 @@ function identify(albumId: string, rows: TrackRow[]): BugsTrack[] {
 }
 
 // Title metadata from https://music.bugs.co.kr/album/4091642. The demo contains no lyrics.
-const sampleRows: [string, string, boolean][] = [
+const liberation: [string, string, boolean][] = [
   ['6217307', '14-23', true],
   ['6217308', '식사 (FEAT. 필리)', true],
   ['6217309', 'OUTCOME (FEAT. Khundi Panda)', true],
@@ -59,13 +60,36 @@ const sampleRows: [string, string, boolean][] = [
   ['6217318', '욕심', false],
 ];
 
+// Track metadata verified against the 13 rows of Bugs album 4151059.
+const rollingStone: [string, string, boolean][] = [
+  ['6487294', 'EASY A', false],
+  ['6487295', 'YELLO TRAP', false],
+  ['6487296', 'LEMON SQUEEZE', false],
+  ['6487297', '빙글빙글', false],
+  ['6487298', 'O n l y', false],
+  ['6487299', '어기여차 (feat. Jeffrey White)', false],
+  ['6487300', 'HEADLOCK', false],
+  ['6487301', 'WHPH (feat. BLASÉ)', false],
+  ['6487302', 'TYPE SHI (feat. HYOI)', false],
+  ['6487303', '너무 많은 것들 (feat. Verbal Jint)', false],
+  ['6487304', '우비소녀 Remix (feat. 주혜린)', false],
+  ['6487305', 'Outro (Skit)', false],
+  ['6487306', 'Mama Just Got Home', false],
+];
+
+const catalog: Record<string, { title: string; artist: string; rows: [string, string, boolean][] }> = {
+  '4091642': { title: '해방', artist: '스카이민혁 (Skyminhyuk)', rows: liberation },
+  '4151059': { title: '무한궤도', artist: 'Luci Gang', rows: rollingStone },
+};
+
 export function getBugsSample(input: string): BugsAlbum | null {
   const album = normalizeBugsAlbumUrl(input);
-  if (album.id !== '4091642') return null;
-  const rows = sampleRows.map(([id, title, adult], index) => ({
+  const metadata = catalog[album.id];
+  if (!metadata) return null;
+  const rows = metadata.rows.map(([id, title, adult], index) => ({
     number: index + 1, title, adult, url: `${bugsOrigin}/track/${id}`,
   }));
-  return { ...album, title: '해방', artist: '스카이민혁 (Skyminhyuk)', source: 'sample', tracks: identify(album.id, rows) };
+  return { ...album, title: metadata.title, artist: metadata.artist, source: 'sample', tracks: identify(album.id, rows) };
 }
 
 function parseHtml(albumId: string, html: string) {
@@ -84,6 +108,7 @@ function parseHtml(albumId: string, html: string) {
     rows.push({
       number: Number(tr.querySelector('.trackIndex em')?.textContent) || rows.length + 1,
       title, url: `${bugsOrigin}/track/${trackId}`,
+      artist: tr.querySelector('.artist a')?.textContent?.trim(),
       adult: !!tr.querySelector('.o19, [adult_yn="Y"]') || !!tr.querySelector('th[scope="row"]')?.textContent?.includes('[19금]'),
     });
   }
@@ -105,8 +130,10 @@ function parseText(text: string): TrackRow[] {
     const previous = cells[i - 1] === '[타이틀곡]' ? cells[i - 2] : cells[i - 1];
     const index = previous?.match(/^(\d+)(?:\s*\[타이틀곡\])?$/);
     if (!index) continue;
-    const label = cells[i + 1] === '[19금]' ? '[19금] ' + (cells[i + 2] ?? '') : cells[i + 1];
-    rows.push(textRow(Number(index[1]), label));
+    const titleCell = cells[i + 1] === '[19금]' ? i + 2 : i + 1;
+    const label = (titleCell === i + 2 ? '[19금] ' : '') + (cells[titleCell] ?? '');
+    const artist = cells[titleCell + 2] === '듣기' ? cells[titleCell + 1] : undefined;
+    rows.push({ ...textRow(Number(index[1]), label), artist });
   }
   if (rows.length) return rows.filter(row => row.title);
 
