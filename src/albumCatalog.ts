@@ -185,7 +185,9 @@ export async function searchCatalogAlbums(query: string, signal?: AbortSignal, m
     return results.sort((a, b) => rank(b) - rank(a));
   }
   // Let the user choose the release, even if several artists share this exact name.
-  return results.filter(hit => [hit.artist, hit.alternateArtist].some(name => name && nameKey(name) === nameKey(term)));
+  const exact = results.filter(hit => [hit.artist, hit.alternateArtist].some(name => name && nameKey(name) === nameKey(term)));
+  // When a localized artist label is unavailable, retain Apple's artistTerm results for manual selection.
+  return exact.length ? exact : results;
 }
 
 export async function loadCatalogAlbum(input: CatalogAlbumHit | string, signal?: AbortSignal): Promise<CatalogAlbum> {

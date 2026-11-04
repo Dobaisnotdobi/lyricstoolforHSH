@@ -1,12 +1,23 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { fetchConfirmedLyrics, lookupOnlineLyrics } from '../src/onlineLyrics.ts';
+import { searchCatalogAlbums } from '../src/albumCatalog.ts';
 
 const record = {
   id: 101, artistName: 'Example Artist', albumName: 'Telescope', trackName: 'Blue Window',
   duration: 171, hasPlainLyrics: true, plainLyrics: 'A test line',
 };
 const query = { title: '파란 창', artist: '예시 가수', albumTitle: '망원경', duration: 171 };
+
+test('artist search retains selectable storefront results when translated labels are unavailable', async t => {
+  const hit = { wrapperType: 'collection', collectionType: 'Album', collectionId: 42, trackCount: 3, collectionName: 'Telescope', artistName: 'Example Artist' };
+  t.mock.method(globalThis, 'fetch', async (path: string) => {
+    const url = new URL(path);
+    const fromArtistSearch = url.pathname === '/search' && url.searchParams.get('attribute') === 'artistTerm';
+    return Response.json({ results: fromArtistSearch ? [hit] : [] });
+  });
+  assert.deepEqual((await searchCatalogAlbums('예시 가수', undefined, 'artist')).map(a => a.id), ['apple:42']);
+});
 
 test('verified title and artist alternatives find the same recording among invalid rows and other versions', async t => {
   const alternate = { ...record, trackName: 'Blue Window (파란 창)' };

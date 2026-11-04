@@ -68,7 +68,7 @@ export default function CatalogAlbumPicker({ onAlbum, onReset, onBugsUrl }: Prop
         if (job.signal.aborted) return;
         setHits(matches);
         setStatus(matches.length
-          ? `${searchBy === 'artist' ? '아티스트 발매 목록' : '검색 결과'} ${matches.length}개 · 원하는 앨범을 선택하세요.`
+          ? `${searchBy === 'artist' ? '아티스트 검색 결과' : '검색 결과'} ${matches.length}개 · 아티스트와 발매일을 보고 앨범을 선택하세요.`
           : searchBy === 'artist' ? '일치하는 발매 목록이 없습니다. 아티스트의 다른 공식 표기도 확인해 주세요.'
           : '일치하는 앨범이 없습니다. 번역 제목을 모르면 아티스트별 앨범에서 찾아보세요.');
       }
