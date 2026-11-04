@@ -499,7 +499,7 @@ export default function App() {
               className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-neutral-900 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-all"
             >
               <ListMusic size={14} aria-hidden="true" />
-              벅스 가져오기 (DEMO)
+              앨범 가사 가져오기
             </button>
             <input 
               type="file" 

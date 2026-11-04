@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ExternalLink, X } from 'lucide-react';
 import OnlineLyricsPanel from './OnlineLyricsPanel';
+import CatalogAlbumPicker from './CatalogAlbumPicker';
 import {
   getBugsSample, normalizeBugsAlbumUrl, parseBugsTracklist,
   type BugsAlbum, type BugsTrack,
@@ -20,6 +21,7 @@ const primary = 'rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-w
 
 export default function BugsImportDialog({ existingIds, existingEmptyIds, onImport, onClose }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const [mode, setMode] = useState<'catalog' | 'bugs'>('catalog');
   const [url, setUrl] = useState('');
   const [pasteUrl, setPasteUrl] = useState('');
   const [text, setText] = useState('');
@@ -68,6 +70,7 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
 
   function openAlbum(input: string) {
     resetUrl(input);
+    setMode('bugs');
     try {
       const normalized = normalizeBugsAlbumUrl(input);
       const sample = getBugsSample(normalized.url);
@@ -76,6 +79,12 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
     } catch (e) {
       setError(e instanceof Error ? e.message : '앨범 주소를 확인해 주세요.');
     }
+  }
+
+  function changeMode(next: typeof mode) {
+    if (mode === next) return;
+    resetUrl('');
+    setMode(next);
   }
 
   function updateTracklist(value: string, table = '') {
@@ -136,7 +145,7 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
       <div className="flex max-h-[86dvh] flex-col">
         <header className="flex items-start justify-between gap-3 border-b border-slate-200 p-4 dark:border-neutral-700">
           <div>
-            <h2 id="bugs-heading" className="text-lg font-bold">벅스 가져오기 <span className="text-xs text-indigo-600 dark:text-indigo-300">DEMO</span></h2>
+            <h2 id="bugs-heading" className="text-lg font-bold">앨범 가사 가져오기</h2>
             <p id="bugs-description" className="mt-1 text-sm text-slate-600 dark:text-neutral-300">
               앨범을 열고 온라인 가사를 조회하세요. 찾은 가사는 새 슬롯이나 기존 빈 슬롯에 넣을 수 있습니다.
             </p>
@@ -145,6 +154,15 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
         </header>
 
         <div className="custom-scrollbar space-y-4 overflow-y-auto p-4">
+          <div role="group" aria-label="앨범 찾기 방법" className="inline-flex rounded-lg bg-slate-100 p-1 text-sm dark:bg-neutral-800">
+            <button type="button" aria-pressed={mode === 'catalog'} onClick={() => changeMode('catalog')}
+              className="rounded-md px-3 py-1.5 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:shadow-sm dark:aria-pressed:bg-neutral-950">앨범 검색·링크</button>
+            <button type="button" aria-pressed={mode === 'bugs'} onClick={() => changeMode('bugs')}
+              className="rounded-md px-3 py-1.5 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:shadow-sm dark:aria-pressed:bg-neutral-950">벅스 주소</button>
+          </div>
+          {mode === 'catalog' ? (
+            <CatalogAlbumPicker onAlbum={setAlbum} onReset={() => resetUrl('')} onBugsUrl={openAlbum} />
+          ) : (
           <form className="space-y-2" onSubmit={event => { event.preventDefault(); openAlbum(url); }}>
             <label htmlFor="bugs-url" className="text-sm font-semibold">벅스 앨범 주소</label>
             <input id="bugs-url" type="text" inputMode="url" autoFocus autoComplete="off" spellCheck={false} value={url}
@@ -154,9 +172,11 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
               <button type="button" onClick={() => openAlbum(SAMPLE_URL)} className="py-1 text-sm text-indigo-700 underline underline-offset-2 dark:text-indigo-300">《해방》 예시 열기</button>
             </div>
           </form>
+          )}
 
           {pasteUrl && (
             <section className="space-y-2">
+              <p className="text-sm leading-relaxed">이 벅스 주소에서 곡 목록을 바로 읽을 수 없습니다. <button type="button" onClick={() => changeMode('catalog')} className="font-semibold text-indigo-700 underline dark:text-indigo-300">앨범 이름으로 검색</button>하거나 아래에 수록곡 표를 붙여넣으세요.</p>
               <label htmlFor="bugs-list" className="text-sm font-semibold">수록곡 목록 붙여넣기</label>
               <p className="text-xs leading-relaxed text-slate-600 dark:text-neutral-300">
                 <a href={pasteUrl} target="_blank" rel="noreferrer" className="font-medium text-indigo-700 underline dark:text-indigo-300">벅스 앨범 페이지 열기 ↗</a>
@@ -182,7 +202,7 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
             <section aria-label="가져올 수록곡" className="space-y-2">
               <h3 className="font-semibold">{album.title}{album.artist && <span className="ml-2 text-sm font-normal">{album.artist}</span>}</h3>
               <p className="text-xs text-slate-600 dark:text-neutral-300">
-                {album.source === 'sample' ? '데모에 저장된 예시 앨범' : '붙여넣은 수록곡 목록'} · {album.tracks.length}곡
+                {album.source === 'apple' ? 'Apple Music 수록곡' : album.source === 'sample' ? '저장된 벅스 예시 목록' : '붙여넣은 수록곡 목록'} · {album.tracks.length}곡
               </p>
               {album.source === 'sample' && <button type="button"
                 onClick={() => { setPasteUrl(album.url); setAlbum(null); clearLyrics(); }}
@@ -218,7 +238,7 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
                       </label>
                       <span className="text-xs text-slate-600 dark:text-neutral-400">{files[track.id] ? 'TXT 가사' : online[track.id] ? '온라인 가사' : exists ? (existingEmptyIds.has(track.id) ? '빈 슬롯' : '기존 가사') : ''}</span>
                       {track.adult && <span className="whitespace-nowrap text-xs text-red-700 dark:text-red-300">19금</span>}
-                      {track.url && <a href={track.url} target="_blank" rel="noreferrer" aria-label={`${track.title} 벅스 곡정보 (새 탭)`}
+                      {track.url && <a href={track.url} target="_blank" rel="noreferrer" aria-label={`${track.title} 곡 정보 (새 탭)`}
                         className="rounded p-1 text-indigo-700 dark:text-indigo-300"><ExternalLink size={14} /></a>}
                     </li>
                   );
@@ -229,7 +249,7 @@ export default function BugsImportDialog({ existingIds, existingEmptyIds, onImpo
         </div>
 
         <footer className="flex items-center justify-end gap-2 border-t border-slate-200 p-4 dark:border-neutral-700">
-          <span role="status" className="mr-auto text-xs text-slate-600 dark:text-neutral-300">{album ? (withLyrics.length ? `가사 ${withLyrics.length}곡 저장 가능` : '온라인 조회 또는 TXT로 가사를 불러오세요.') : (pasteUrl ? '수록곡 표를 붙여넣어 주세요.' : '앨범 주소를 입력해 주세요.')}</span>
+          <span role="status" className="mr-auto text-xs text-slate-600 dark:text-neutral-300">{album ? (withLyrics.length ? `가사 ${withLyrics.length}곡 저장 가능` : '온라인 조회 또는 TXT로 가사를 불러오세요.') : (pasteUrl ? '앨범을 검색하거나 수록곡 표를 붙여넣어 주세요.' : '먼저 앨범을 선택해 주세요.')}</span>
           <button type="button" className={secondary} onClick={onClose}>취소</button>
           {withLyrics.length ? <button type="button" disabled={busy} className={primary}
             onClick={() => onImport(withLyrics.map(t => ({ ...t, lyrics: lyrics[t.id] })))}>가사 {withLyrics.length}곡 저장</button>

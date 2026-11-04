@@ -5,6 +5,7 @@ export interface BugsTrack {
   url?: string;
   adult?: boolean;
   artist?: string;
+  duration?: number;
 }
 
 export interface BugsAlbum {
@@ -12,7 +13,7 @@ export interface BugsAlbum {
   url: string;
   title: string;
   artist: string;
-  source: 'sample' | 'paste';
+  source: 'sample' | 'paste' | 'apple';
   tracks: BugsTrack[];
 }
 

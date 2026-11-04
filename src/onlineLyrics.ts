@@ -91,7 +91,7 @@ async function request(path: string, signal: AbortSignal) {
     retryAt = Date.now() + (Number.isFinite(delay) ? Math.max(1000, delay) : 60000) + Math.random() * 500;
     throw new Error('rate limit');
   }
-  if (response.status === 404 && path.startsWith('/api/get/')) return null;
+  if (response.status === 404 && (path.startsWith('/api/get/') || path.startsWith('/api/get?'))) return null;
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json() as Promise<unknown>;
 }
@@ -119,11 +119,13 @@ export async function lookupOnlineLyrics(query: OnlineLyricsQuery, signal?: Abor
   const albumNames = [query.albumTitle, query.alternateAlbumTitle].filter(s => s && !/^앨범 \d+$/.test(s)).map(normalize);
   const duration = query.duration;
   const strictRecording = duration > 0 && albumNames.length > 0;
+  // Some storefronts append a release type to the same album title (e.g. "Her - EP").
+  const albumKey = (name: string) => strictRecording ? normalize(name).replace(/\s+-\s+(?:ep|single)$/, '') : normalize(name);
   const titleKey = (s: string) => normalize(strictRecording ? withoutFeature(s) : s);
   const matches = (r: RecordInfo) => !r.instrumental
     && artistKeys.includes(normalize(r.artistName))
     && titles.some(t => titleKey(t) === titleKey(r.trackName))
-    && (!albumNames.length || albumNames.includes(normalize(r.albumName)))
+    && (!albumNames.length || albumNames.some(name => albumKey(name) === albumKey(r.albumName)))
     && (!(duration > 0) || Math.abs(r.duration - duration) <= 2);
   const controller = new AbortController();
   const abort = () => controller.abort();
@@ -131,6 +133,16 @@ export async function lookupOnlineLyrics(query: OnlineLyricsQuery, signal?: Abor
   signal?.addEventListener('abort', abort, { once: true });
   const timer = setTimeout(abort, 25000);
   try {
+    if (strictRecording && !query.alternateAlbumTitle && duration <= 3600) {
+      const params = new URLSearchParams({
+        artist_name: query.artist, track_name: query.title, album_name: query.albumTitle, duration: String(duration),
+      });
+      const record = await request(`/api/get?${params}`, controller.signal);
+      if (isRecord(record) && matches(record)) {
+        const lyrics = plainText(record);
+        if (lyrics) return { status: 'found', lyrics, sourceUrl: `${baseUrl}/api/get/${record.id}` };
+      }
+    }
     async function getMatch(rows: RecordInfo[]): Promise<OnlineLyricsResult | undefined> {
       const matching = rows.filter(r => matches(r) && (r.hasPlainLyrics || r.hasSyncedLyrics));
       const exactTitle = (r: RecordInfo) => Number(normalize(r.trackName) === normalize(query.title));

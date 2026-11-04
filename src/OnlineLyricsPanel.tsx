@@ -20,9 +20,15 @@ export default function OnlineLyricsPanel({ album, existingIds, existingEmptyIds
   const busyChange = useRef(onBusyChange);
   busyChange.current = onBusyChange;
 
-  useEffect(() => () => {
-    controller.current?.abort();
-    busyChange.current?.(false);
+  useEffect(() => {
+    // Each album preview mounts a fresh panel. Defer the request past StrictMode's mount check.
+    const start = album.source === 'apple' ? window.setTimeout(() => void lookup(), 0) : undefined;
+    return () => {
+      window.clearTimeout(start);
+      controller.current?.abort();
+      controller.current = null;
+      busyChange.current?.(false);
+    };
   }, []);
 
   const eligible = album.tracks.filter(t => !existingIds.has(t.id) || existingEmptyIds.has(t.id));
@@ -49,6 +55,7 @@ export default function OnlineLyricsPanel({ album, existingIds, existingEmptyIds
           title: track.title,
           artist: track.artist || album.artist || manualArtist.trim(),
           albumTitle: album.title === `앨범 ${album.id}` ? undefined : album.title,
+          duration: track.duration,
           ...getAlbumTrackAliases(album.id, track.number, track.title),
         };
         let result = await lookupOnlineLyrics(query, job.signal);
@@ -119,7 +126,7 @@ export default function OnlineLyricsPanel({ album, existingIds, existingEmptyIds
       {busy ? <button type="button" className="rounded border px-3 py-1.5 text-sm" onClick={stop}>조회 중지</button>
         : <button type="button" disabled={!mayStart} onClick={lookup}
           className="rounded bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">온라인 가사 조회</button>}
-      {status && <p role="status" className="text-xs">{status}</p>}
+      {(status || !eligible.length) && <p role="status" className="text-xs">{status || '이 앨범의 모든 슬롯에 이미 가사가 있습니다.'}</p>}
       {unavailable.length > 0 && <details className="text-xs text-slate-600 dark:text-neutral-300"><summary>일치하는 가사가 없는 곡</summary>
         <ul className="mt-1 list-inside list-disc">{unavailable.map((title, i) => <li key={i}>{title}</li>)}</ul>
       </details>}
